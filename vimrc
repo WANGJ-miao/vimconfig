@@ -2,12 +2,12 @@ let mapleader = " "
 
 set nocompatible
 set number
-set smartindent
-set autoindent
 set tabstop=2
 set shiftwidth=2
 set scrolloff=2
 set sidescrolloff=8
+set smartindent
+set autoindent
 set smoothscroll
 set hlsearch
 set hidden
@@ -27,7 +27,6 @@ set showcmd
 set ruler
 set laststatus=2
 set termguicolors        
-set background=dark
 set makeprg=cmake\ --build\ build
 set encoding=utf-8
 set fileencoding=utf-8
@@ -42,6 +41,8 @@ set foldmethod=manual
 set foldlevel=99
 " 在左侧显示折叠标识
 set foldcolumn=1
+set timeoutlen=1000
+set ttimeoutlen=10
 
 "MyFunction
 function! HelloWorld() abort
@@ -92,18 +93,13 @@ nnoremap # #zzzv
 nnoremap g* g*zzzv
 nnoremap g# g#zzzv
 
-" ===== 更舒服的配色（内置）=====
-" colorscheme evening
-colorscheme jellybeans
-" colorscheme gruvbox
-
 xnoremap * :<C-u>call <SID>VSetSearch('/')<CR>/<C-R>=@/<CR><CR>
 xnoremap # :<C-u>call <SID>VSetSearch('?')<CR>?<C-R>=@/<CR><CR>
 function! s:VSetSearch(cmdtype)
-let temp = @s
-norm! gv"sy
-let @/ = '\V' . substitute(escape(@s, a:cmdtype.'\'), '\n', '\\n', 'g')
-let @s = temp
+	let temp = @s
+	norm! gv"sy
+	let @/ = '\V' . substitute(escape(@s, a:cmdtype.'\'), '\n', '\\n', 'g')
+	let @s = temp
 endfunction
 
 call plug#begin('~/.vim/plugged')
@@ -111,7 +107,7 @@ call plug#begin('~/.vim/plugged')
 Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-fugitive'
 Plug 'tpope/vim-abolish'
-Plug 'preservim/nerdtree'
+" Plug 'preservim/nerdtree'
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
 Plug 'morhetz/gruvbox'
@@ -125,6 +121,13 @@ Plug 'junegunn/fzf.vim'
 Plug 'kshenoy/vim-signature'
 
 call plug#end()
+
+" ===== 更舒服的配色（内置）=====
+colorscheme jellybeans
+" colorscheme quiet
+" colorscheme slate
+" colorscheme gruvbox
+set background=dark
 
 " ----------sign------------
 " m/        " 打开当前文件 marks 列表
@@ -140,11 +143,6 @@ nnoremap <silent> <leader>fg :GFiles<CR>
 nnoremap <leader>fr :Rg<Space>
 nnoremap <silent> <leader>fw :Rg <C-R><C-W><CR>
 
-augroup my_coc
-  autocmd!
-  autocmd CursorHold * silent call CocActionAsync('highlight')
-augroup END
-
 " 诊断导航
 nmap <silent> [g <Plug>(coc-diagnostic-prev)
 nmap <silent> ]g <Plug>(coc-diagnostic-next)
@@ -159,11 +157,11 @@ nmap <silent> gD <Plug>(coc-declaration)
 " 鼠标
 nnoremap <silent> <C-LeftMouse> <Plug>(coc-definition)
 
-" rename / code action / format
-nmap <silent> <leader>rn <Plug>(coc-rename)
-nmap <silent> <leader>ca <Plug>(coc-codeaction)
-xmap <silent> <leader>ca <Plug>(coc-codeaction-selected)
-nmap <silent> <leader>qf <Plug>(coc-fix-current)
+" " rename / code action / format
+" nmap <silent> <leader>rn <Plug>(coc-rename)
+" nmap <silent> <leader>ca <Plug>(coc-codeaction)
+" xmap <silent> <leader>ca <Plug>(coc-codeaction-selected)
+" nmap <silent> <leader>qf <Plug>(coc-fix-current)
 
 " hover
 nnoremap <silent> K :call ShowDocumentation()<CR>
@@ -194,7 +192,7 @@ function! s:toggle_coc_outline() abort
 		call coc#window#close(l:winid)
 	endif
 endfunction
-nnoremap <silent> <leader>o :<C-u>call <SID>toggle_coc_outline()<CR>
+nnoremap <silent> <leader>co :<C-u>call <SID>toggle_coc_outline()<CR>
 
 " 当前函数/符号列表
 nnoremap <silent> <leader>ss :CocList -I symbols<CR>
@@ -250,7 +248,16 @@ function! CheckBackspace() abort
 endfunction
 
 function! SnippetStatus() abort
-  return coc#jumpable() ? 'SNIP' : ''
+  if !exists('*coc#rpc#ready') || !coc#rpc#ready()
+    return ''
+  endif
+  try
+    return coc#jumpable() ? 'SNIP' : ''
+  catch /Plugin not ready/
+    return ''
+  catch
+    return ''
+  endtry
 endfunction
 
 " =============================================================
@@ -266,8 +273,8 @@ nnoremap <silent> [b :bprevious<CR>
 " ---------- quickfix / location list ----------
 nnoremap <silent> ]q :cnext<CR>
 nnoremap <silent> [q :cprevious<CR>
-nnoremap <silent> <leader>qo :copen<CR>
-nnoremap <silent> <leader>qc :cclose<CR>
+" nnoremap <silent> <leader>qo :copen<CR>
+" nnoremap <silent> <leader>qc :cclose<CR>
 nnoremap <silent> ]l :lnext<CR>
 nnoremap <silent> [l :lprevious<CR>
 nnoremap <silent> <leader>lo :lopen<CR>
@@ -279,65 +286,265 @@ nnoremap <silent> <leader>lc :lclose<CR>
 " augroup END
 
 " ---------- NERDTree ----------
-nnoremap <silent> <C-n> :NERDTreeToggle<CR>
-nnoremap <silent> <leader>tt :NERDTreeToggle<CR>
-nnoremap <silent> <leader>tf :NERDTreeFind<CR>
-nnoremap <silent> <leader>tr :NERDTreeFocus<CR>
-let NERDTreeShowHidden=0
+" nnoremap <silent> <C-n> :NERDTreeToggle<CR>
+" nnoremap <silent> <leader>tt :NERDTreeToggle<CR>
+" nnoremap <silent> <leader>tf :NERDTreeFind<CR>
+" nnoremap <silent> <leader>tr :NERDTreeFocus<CR>
+" let NERDTreeShowHidden=0
 
-augroup my_nerdtree
-  autocmd!
-  autocmd VimEnter * NERDTree
-  " Exit Vim if NERDTree is the only window remaining in the only tab.
-  autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | call feedkeys(":quit\<CR>:\<BS>") | endif
-  " Close the tab if NERDTree is the only window remaining in it.
-  autocmd BufEnter * if winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | call feedkeys(":quit\<CR>:\<BS>") | endif
-augroup END
+" augroup my_nerdtree
+"   autocmd!
+"   autocmd VimEnter * NERDTree
+"   " Exit Vim if NERDTree is the only window remaining in the only tab.
+"   autocmd BufEnter * if tabpagenr('$') == 1 && winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | call feedkeys(":quit\<CR>:\<BS>") | endif
+"   " Close the tab if NERDTree is the only window remaining in it.
+"   autocmd BufEnter * if winnr('$') == 1 && exists('b:NERDTree') && b:NERDTree.isTabTree() | call feedkeys(":quit\<CR>:\<BS>") | endif
+" augroup END
 
 
-" " 使用windows clipboard复制
-" function! CopyToWindowsClipboard(lines) abort
-"     call system('/mnt/c/Windows/System32/clip.exe', join(a:lines, "\n"))
-" endfunction
-" " 可视模式复制选中内容
-" xnoremap <silent> <leader>y :<C-u>call CopyToWindowsClipboard(getline("'<", "'>"))<CR>
-" " 普通模式复制整个文件
-" nnoremap <silent> <leader>ya :call CopyToWindowsClipboard(getline(1, '$'))<CR>
-"function! CopyToWindowsClipboard(lines) abort
-"  let l:text = join(a:lines, "\r\n")
-"  call system('iconv -f utf-8 -t utf-16le | /mnt/c/Windows/System32/ clip.exe', l:text)
-"endfunction
+  " if executable('iconv') && filereadable('/mnt/c/Windows/System32/clip.exe')
 
-"xnoremap <silent> <leader>y :<C-u>call CopyToWindowsClipboard(getline("'<",
-""'>"))<CR>
-"nnoremap <silent> <leader>ya :call CopyToWindowsClipboard(getline(1,
-"'$'))<CR>
-  if executable('iconv') && filereadable('/mnt/c/Windows/System32/clip.exe')
+  " function! CopyToWindowsClipboard(lines) abort
+  "     let l:text = join(a:lines, "\r\n")
+  "     call system('iconv -f utf-8 -t utf-16le | /mnt/c/Windows/System32/clip.exe', l:text)
+  " endfunction
 
-  function! CopyToWindowsClipboard(lines) abort
-      let l:text = join(a:lines, "\r\n")
-      call system('iconv -f utf-8 -t utf-16le | /mnt/c/Windows/System32/clip.exe', l:text)
-  endfunction
+  " function! PasteFromWindowsClipboard() abort
+  "     return system('/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command "Get-Clipboard"')
+  " endfunction
 
-  function! PasteFromWindowsClipboard() abort
-      return system('/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe -NoProfile -Command "Get-Clipboard"')
-  endfunction
+  " " 可视模式复制选中内容
+  " xnoremap <silent> <leader>y :<C-u>call CopyToWindowsClipboard(getline("'<", "'>"))<CR>
 
-  " 可视模式复制选中内容
-  xnoremap <silent> <leader>y :<C-u>call CopyToWindowsClipboard(getline("'<", "'>"))<CR>
+  " " 普通模式复制当前行
+  " nnoremap <silent> <leader>yy :call CopyToWindowsClipboard([getline('.')])<CR>
 
-  " 普通模式复制当前行
-  nnoremap <silent> <leader>yy :call CopyToWindowsClipboard([getline('.')])<CR>
+  " " 普通模式复制整个文件
+  " nnoremap <silent> <leader>ya :call CopyToWindowsClipboard(getline(1, '$'))<CR>
 
-  " 普通模式复制整个文件
-  nnoremap <silent> <leader>ya :call CopyToWindowsClipboard(getline(1, '$'))<CR>
+  " " 从 Windows 剪贴板粘贴到光标后
+  " nnoremap <silent> <leader>p :put =PasteFromWindowsClipboard()<CR>
 
-  " 从 Windows 剪贴板粘贴到光标后
-  nnoremap <silent> <leader>p :put =PasteFromWindowsClipboard()<CR>
+  " endif
 
+" ===============================
+" Cross-platform system clipboard
+" Windows / WSL / Linux
+" ===============================
+
+function! s:IsWSL() abort
+  if !has('unix')
+    return 0
   endif
+
+  if exists('$WSL_DISTRO_NAME') || filereadable('/proc/sys/fs/binfmt_misc/WSLInterop')
+    return 1
+  endif
+
+  return system('uname -r') =~? 'microsoft'
+endfunction
+
+
+function! CopyToSystemClipboard(lines) abort
+  let l:text = join(a:lines, "\n")
+
+  " WSL -> Windows clipboard
+  if s:IsWSL()
+    let l:clip = '/mnt/c/Windows/System32/clip.exe'
+
+    if executable('iconv') && filereadable(l:clip)
+      call system('iconv -f UTF-8 -t UTF-16LE | ' . shellescape(l:clip), l:text)
+      if v:shell_error == 0
+        return
+      endif
+    endif
+  endif
+
+  " Native Windows Vim / GVim
+  if has('win32') || has('win64')
+    if executable('powershell.exe')
+      call system(
+            \ 'powershell.exe -NoProfile -Command "[Console]::InputEncoding=[Text.Encoding]::UTF8; $s=[Console]::In.ReadToEnd(); Set-Clipboard -Value $s"',
+            \ l:text
+            \ )
+      if v:shell_error == 0
+        return
+      endif
+    endif
+
+    if executable('clip.exe')
+      call system('clip.exe', l:text)
+      if v:shell_error == 0
+        return
+      endif
+    endif
+  endif
+
+  " Linux Wayland
+  if executable('wl-copy')
+    call system('wl-copy', l:text)
+    if v:shell_error == 0
+      return
+    endif
+  endif
+
+  " Linux X11: xclip
+  if executable('xclip')
+    call system('xclip -selection clipboard', l:text)
+    if v:shell_error == 0
+      return
+    endif
+  endif
+
+  " Linux X11: xsel
+  if executable('xsel')
+    call system('xsel --clipboard --input', l:text)
+    if v:shell_error == 0
+      return
+    endif
+  endif
+
+  " Vim 自带剪贴板兜底
+  try
+    call setreg('+', a:lines, 'l')
+    return
+  catch
+  endtry
+
+  echohl ErrorMsg
+  echom 'No usable system clipboard tool found. Install wl-clipboard, xclip, or xsel.'
+  echohl None
+endfunction
+
+
+function! PasteFromSystemClipboard() abort
+  " WSL <- Windows clipboard
+  if s:IsWSL()
+    let l:ps = '/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe'
+
+    if filereadable(l:ps)
+      let l:out = system(
+            \ shellescape(l:ps) .
+            \ ' -NoProfile -Command "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false; Get-Clipboard -Raw"'
+            \ )
+      if v:shell_error == 0
+        return substitute(l:out, "\r", "", "g")
+      endif
+    endif
+  endif
+
+  " Native Windows
+  if has('win32') || has('win64')
+    if executable('powershell.exe')
+      let l:out = system(
+            \ 'powershell.exe -NoProfile -Command "[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding $false; Get-Clipboard -Raw"'
+            \ )
+      if v:shell_error == 0
+        return substitute(l:out, "\r", "", "g")
+      endif
+    endif
+  endif
+
+  " Linux Wayland
+  if executable('wl-paste')
+    let l:out = system('wl-paste --no-newline')
+    if v:shell_error == 0
+      return l:out
+    endif
+  endif
+
+  " Linux X11: xclip
+  if executable('xclip')
+    let l:out = system('xclip -selection clipboard -out')
+    if v:shell_error == 0
+      return l:out
+    endif
+  endif
+
+  " Linux X11: xsel
+  if executable('xsel')
+    let l:out = system('xsel --clipboard --output')
+    if v:shell_error == 0
+      return l:out
+    endif
+  endif
+
+  " Vim 自带剪贴板兜底
+  try
+    return getreg('+')
+  catch
+  endtry
+
+  echohl ErrorMsg
+  echom 'No usable system clipboard paste tool found.'
+  echohl None
+
+  return ''
+endfunction
+
+
+" 可视模式复制选中行
+xnoremap <silent> <leader>y :<C-U>call CopyToSystemClipboard(getline("'<", "'>"))<CR>
+
+" 普通模式复制当前行
+nnoremap <silent> <leader>yy :call CopyToSystemClipboard([getline('.')])<CR>
+
+" 普通模式复制整个文件
+nnoremap <silent> <leader>ya :call CopyToSystemClipboard(getline(1, '$'))<CR>
+
+" 从系统剪贴板粘贴到当前行下面
+nnoremap <silent> <leader>p :put =PasteFromSystemClipboard()<CR>
 
 " fugitive
 nnoremap <silent> <leader>2 :diffget //2<CR>
 nnoremap <silent> <leader>3 :diffget //3<CR>
 nnoremap <silent> <leader>ga :Git add %<CR>
+
+
+"--------netrw----------"
+let g:netrw_banner=1 "是否开启顶端的提示栏
+
+let g:netrw_preview   = 1
+let g:netrw_liststyle = 1
+" let g:netrw_winsize   = 30
+let g:netrw_sort_by = "name"
+let g:netrw_hide = 1
+let g:netrw_list_hide= '^\.,.*\.swp$'
+
+function! NetrwDeleteRecursive() abort
+  let name = netrw#Call('NetrwGetWord')
+  let name = substitute(name, '/$', '', '')
+
+  if name ==# '.' || name ==# '..' || name ==# './' || name ==# '../'
+    echo 'Refusing to delete .'
+    return
+  endif
+
+  let dir = get(b:, 'netrw_curdir', getcwd())
+  let path = fnamemodify(dir . '/' . name, ':p')
+
+  " 普通文件：交给 netrw 原来的删除逻辑
+  if !isdirectory(path)
+    call netrw#Call('NetrwLocalRm', dir)
+    return
+  endif
+
+  " 目录：自己递归删除
+  if confirm('Delete directory recursively: ' . path . ' ?', "&Yes\n&No", 2) != 1
+    return
+  endif
+
+  if delete(path, 'rf') != 0
+    echoerr 'delete failed: ' . path
+  else
+    execute 'edit ' . fnameescape(dir)
+  endif
+endfunction
+
+augroup my_netrw_delete
+  autocmd!
+  autocmd FileType netrw nnoremap <buffer> dr :<C-U>call NetrwDeleteRecursive()<CR>
+augroup END
+
+nnoremap <leader>e :<C-u>E<CR>
+nnoremap <leader>E :<C-u>Re<CR>
